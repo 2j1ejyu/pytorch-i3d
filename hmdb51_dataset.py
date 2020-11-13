@@ -78,6 +78,7 @@ def make_dataset(split_folder, split, root, mode, num_classes=51):
     
     return dataset
 
+'''
 def make_dataset_both(split_folder, split, root, num_classes=51):
     split_data = os.path.join(split_folder,'both', 'split'+split, 'data.pickle')
     dataset = []
@@ -102,12 +103,13 @@ def make_dataset_both(split_folder, split, root, num_classes=51):
         dataset.append((vid, label, num_frames))
     
     return dataset
+'''
 
 
 class HMDB51(data_utl.Dataset):
 
-    def __init__(self, split_folder, split, root, mode, transforms=None):
-        self.data = make_dataset(split_folder, split, root, mode)
+    def __init__(self, split_folder, split, root, mode, transforms=None, num_classes=51):
+        self.data = make_dataset(split_folder, split, root, mode, num_classes)
         self.transforms = transforms
         self.mode = mode
         self.root = root
@@ -137,6 +139,7 @@ class HMDB51(data_utl.Dataset):
     def __len__(self):
         return len(self.data)
 
+'''
 class HMDB51_both(data_utl.Dataset):
 
     def __init__(self, split_folder, split, root, transforms=None, num_classes=51):
@@ -168,3 +171,4 @@ class HMDB51_both(data_utl.Dataset):
 
     def __len__(self):
         return len(self.data)
+'''

@@ -24,7 +24,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torch.autograd import Variable
 
 import torchvision
 from torchvision import datasets, transforms
@@ -42,6 +41,7 @@ from hmdb51_dataset import HMDB51_both as Dataset
 
 def run(args):
     # setup dataset
+    device = torch.device("cuda")
     if args.use_wandb == 'True':
         wandb.init(project='i3d-pytorch')
     train_split= os.path.join(args.root,'splits_8/train')
@@ -98,12 +98,8 @@ def run(args):
                 num_iter += 1
                 # get the inputs
                 inputs_rgb, inputs_flow, labels = data
-
-                # wrap them in Variable
-                inputs_rgb = Variable(inputs_rgb.cuda())
-                inputs_flow = Variable(inputs_flow.cuda())
+                inputs_rgb, inputs_flow, labels = inputs_rgb.to(device), inputs_flow.to(device), target.to(labels)
                 t = inputs_rgb.size(2)
-                labels = Variable(labels.cuda())
 
                 per_frame_logits = i3d(inputs_rgb, inputs_flow)
                 # upsample to input size
