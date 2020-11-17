@@ -15,8 +15,10 @@ parser.add_argument('--lr', type=float, default=0.1)
 parser.add_argument('--max_steps', type=int, default=64e3)
 parser.add_argument('--use_wandb',type=str, default='True')
 parser.add_argument('--model_save',type=str, default='True')
-parser.add_argument('--num_classes', type=int, default=8)
+parser.add_argument('--num_classes', type=int, default=51)
 parser.add_argument('--max_epoch', type=int, default=200)
+parser.add_argument('--load_model', type=str, default='False')
+parser.add_argument('--load_loc', type=str, default='000171.pt')
 
 args = parser.parse_args()
 
@@ -62,6 +64,7 @@ def run(args):
     dataloaders = {'train': dataloader, 'val': val_dataloader}
     datasets = {'train': dataset, 'val': val_dataset}
 
+    epoch = 0
     
     # setup the model
     if args.mode == 'flow':
@@ -71,6 +74,12 @@ def run(args):
         i3d = InceptionI3d(400, in_channels=3)
         i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
     i3d.replace_logits(args.num_classes)
+    
+    if args.load_model == 'True':
+        path = os.path.join('./', args.save_loc,'class_{}'.format(args.num_classes), args.mode, args.load_loc)
+        i3d.load_state_dict(torch.load(path))
+        epoch = int(args.load_loc[:-3])
+        
     
     #i3d.load_state_dict(torch.load('/ssd/models/000920.pt'))
     i3d.cuda()
@@ -83,7 +92,7 @@ def run(args):
 
     num_steps_per_update = 4 # accum gradient
     steps = 0
-    epoch = 0
+    
     # train it
     while steps < args.max_steps and epoch < args.max_epoch:
         
@@ -144,7 +153,7 @@ def run(args):
                     log_dict = {'Loc Loss': tot_loc_loss/num_iter, 'Cls Loss': tot_cls_loss/num_iter, 'Tot Loss': (tot_loss*num_steps_per_update)/num_iter}
                     wandb.log(log_dict)
                 if args.model_save == 'True':
-                    torch.save(i3d.module.state_dict(), os.path.join(args.save_loc, args.mode,  str(epoch).zfill(6)+'.pt'))
+                    torch.save(i3d.module.state_dict(), os.path.join(args.save_loc,'class_{}'.format(args.num_classes), args.mode,  str(epoch).zfill(6)+'.pt'))
                     
 
                                

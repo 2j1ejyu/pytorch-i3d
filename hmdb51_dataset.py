@@ -78,32 +78,31 @@ def make_dataset(split_folder, split, root, mode, num_classes=51):
     
     return dataset
 
-'''
+
 def make_dataset_both(split_folder, split, root, num_classes=51):
-    split_data = os.path.join(split_folder,'both', 'split'+split, 'data.pickle')
+    split_data_rgb = os.path.join(split_folder,'rgb', 'split'+split, 'data.pickle')
+    split_data_flow = os.path.join(split_folder,'flow', 'split'+split, 'data.pickle')
     dataset = []
-    with open(split_data, 'rb') as f:
-        data = pickle.load(f)
+    with open(split_data_rgb, 'rb') as f:
+        data_rgb = pickle.load(f)
+    with open(split_data_flow, 'rb') as f:
+        data_flow = pickle.load(f)
     
-    for vid in data.keys():
-        num_frames = {}
-        num_frames['flow'] = data[vid]['num_frame_flow']
-        num_frames['rgb'] = data[vid]['num_frame_rgb']
-        min_num_frames = min(num_frames['flow'], num_frames['rgb'])
+    for vid in data_rgb.keys():
+        nf_flow = data_flow[vid]['num_frame']
+        nf_rgb = data_rgb[vid]['num_frame']
+        min_num_frames = min(nf_flow, nf_rgb)
         
         if min_num_frames < 66:
             continue
-        label = {}
-        label['flow'] = np.zeros((num_classes,num_frames['flow']), np.float32)
-        label['rgb'] = np.zeros((num_classes,num_frames['rgb']), np.float32)
+    
+        label = np.zeros((num_classes,min_num_frames), np.float32)
 
-        ann = data[vid]['target']
-        label['flow'][ann] = 1 # binary classification
-        label['rgb'][ann] = 1
-        dataset.append((vid, label, num_frames))
+        ann = data_rgb[vid]['target']
+        label[ann] = 1 # binary classification
+        dataset.append((vid, label, min_num_frames))
     
     return dataset
-'''
 
 
 class HMDB51(data_utl.Dataset):
@@ -139,7 +138,7 @@ class HMDB51(data_utl.Dataset):
     def __len__(self):
         return len(self.data)
 
-'''
+
 class HMDB51_both(data_utl.Dataset):
 
     def __init__(self, split_folder, split, root, transforms=None, num_classes=51):
@@ -155,14 +154,13 @@ class HMDB51_both(data_utl.Dataset):
         Returns:
             tuple: (image, target) where target is class_index of the target class.
         """
-        vid, label_, nf = self.data[index]
-        nf = min(nf['rgb'],nf['flow'])
+        vid, label, nf = self.data[index]
         start_f = random.randint(1,nf-65)
 
         imgs_rgb = load_rgb_frames(self.root, vid, start_f, 64)
         imgs_flow = load_flow_frames(self.root, vid, start_f, 64)
 
-        label = label_['rgb'][:, start_f:start_f+64]
+        label = label[:, start_f:start_f+64]
 
         imgs_rgb = self.transforms(imgs_rgb)
         imgs_flow = self.transforms(imgs_flow)
@@ -171,4 +169,3 @@ class HMDB51_both(data_utl.Dataset):
 
     def __len__(self):
         return len(self.data)
-'''
