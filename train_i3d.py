@@ -38,7 +38,7 @@ import pdb
 
 import numpy as np
 
-from pytorch_i3d import InceptionI3d
+from models.pytorch_i3d import InceptionI3d
 
 from hmdb51_dataset import HMDB51 as Dataset
 
@@ -55,8 +55,8 @@ def run(args):
     ])
     test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
-    dataset = Dataset(train_split, args.split, args.root, args.mode, train_transforms, args.num_classes)
-    val_dataset = Dataset(val_split, args.split, args.root, args.mode, test_transforms, args.num_classes)
+    dataset = Dataset(train_split, args.split, args.root, args.mode, train_transforms, args.num_classes, 224)
+    val_dataset = Dataset(val_split, args.split, args.root, args.mode, test_transforms, args.num_classes, 224)
     
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)    
@@ -69,10 +69,10 @@ def run(args):
     # setup the model
     if args.mode == 'flow':
         i3d = InceptionI3d(400, in_channels=2)
-        i3d.load_state_dict(torch.load('models/flow_imagenet.pt'))
+        i3d.load_state_dict(torch.load('pretrained_models/flow_imagenet.pt'))
     else:
         i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
+        i3d.load_state_dict(torch.load('pretrained_models/rgb_imagenet.pt'))
     i3d.replace_logits(args.num_classes)
     
     if args.load_model == 'True':

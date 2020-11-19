@@ -25,28 +25,28 @@ def video_to_tensor(pic):
     return torch.from_numpy(pic.transpose([3,0,1,2]))
 
 
-def load_rgb_frames(image_dir, vid, start, num):
+def load_rgb_frames(image_dir, vid, start, num, pixel):
   frames = []
   for i in range(start, start+num):
     img = cv2.imread(os.path.join(image_dir, 'rgb', vid, 'frame'+str(i).zfill(6)+'.jpg'))[:, :, [2, 1, 0]]
     w,h,c = img.shape
-    if w < 226 or h < 226:
-        d = 226.-min(w,h)
+    if w < pixel or h < pixel:
+        d = float(pixel)-min(w,h)
         sc = 1+d/min(w,h)
         img = cv2.resize(img,dsize=(0,0),fx=sc,fy=sc)
     img = (img/255.)*2 - 1
     frames.append(img)
   return np.asarray(frames, dtype=np.float32)
 
-def load_flow_frames(image_dir, vid, start, num):
+def load_flow_frames(image_dir, vid, start, num, pixel):
   frames = []
   for i in range(start, start+num):
     imgx = cv2.imread(os.path.join(image_dir, 'flow/x', vid, 'frame'+str(i).zfill(6)+'.jpg'), cv2.IMREAD_GRAYSCALE)
     imgy = cv2.imread(os.path.join(image_dir, 'flow/y', vid, 'frame'+str(i).zfill(6)+'.jpg'), cv2.IMREAD_GRAYSCALE)
     
     w,h = imgx.shape
-    if w < 224 or h < 224:
-        d = 224.-min(w,h)
+    if w < pixel or h < pixel:
+        d = float(pixel)-min(w,h)
         sc = 1+d/min(w,h)
         imgx = cv2.resize(imgx,dsize=(0,0),fx=sc,fy=sc)
         imgy = cv2.resize(imgy,dsize=(0,0),fx=sc,fy=sc)
@@ -107,11 +107,12 @@ def make_dataset_both(split_folder, split, root, num_classes=51):
 
 class HMDB51(data_utl.Dataset):
 
-    def __init__(self, split_folder, split, root, mode, transforms=None, num_classes=51):
+    def __init__(self, split_folder, split, root, mode, transforms=None, num_classes=51, pixel=299):
         self.data = make_dataset(split_folder, split, root, mode, num_classes)
         self.transforms = transforms
         self.mode = mode
         self.root = root
+        self.pixel = pixel
 
     def __getitem__(self, index):
         """
@@ -125,9 +126,9 @@ class HMDB51(data_utl.Dataset):
         start_f = random.randint(1,nf-65)
 
         if self.mode == 'rgb':
-            imgs = load_rgb_frames(self.root, vid, start_f, 64)
+            imgs = load_rgb_frames(self.root, vid, start_f, 64, self.pixel)
         else :
-            imgs = load_flow_frames(self.root, vid, start_f, 64)
+            imgs = load_flow_frames(self.root, vid, start_f, 64, self.pixel)
 
         label = label[:, start_f:start_f+64]
 
@@ -141,10 +142,11 @@ class HMDB51(data_utl.Dataset):
 
 class HMDB51_both(data_utl.Dataset):
 
-    def __init__(self, split_folder, split, root, transforms=None, num_classes=51):
+    def __init__(self, split_folder, split, root, transforms=None, num_classes=51, pixel=299):
         self.data = make_dataset_both(split_folder, split, root, num_classes)
         self.transforms = transforms
         self.root = root
+        self.pixel = pixel
 
     def __getitem__(self, index):
         """
@@ -157,8 +159,8 @@ class HMDB51_both(data_utl.Dataset):
         vid, label, nf = self.data[index]
         start_f = random.randint(1,nf-65)
 
-        imgs_rgb = load_rgb_frames(self.root, vid, start_f, 64)
-        imgs_flow = load_flow_frames(self.root, vid, start_f, 64)
+        imgs_rgb = load_rgb_frames(self.root, vid, start_f, 64, self.pixel)
+        imgs_flow = load_flow_frames(self.root, vid, start_f, 64, self.pixel)
 
         label = label[:, start_f:start_f+64]
 

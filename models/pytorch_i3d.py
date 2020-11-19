@@ -327,7 +327,7 @@ class InceptionI3d(nn.Module):
         x = self.logits(self.dropout(self.avg_pool(x)))
         if self._spatial_squeeze:
             logits = x.squeeze(3).squeeze(3)
-        # logits is batch X time X classes, which is what we want to work with
+        # logits is batch X classes X time, which is what we want to work with
         return logits
         
 
@@ -337,21 +337,3 @@ class InceptionI3d(nn.Module):
                 x = self._modules[end_point](x)
         return self.avg_pool(x)
 
-class I3D(nn.Module):
-    def __init__(self, pretrain_rgb, pretrain_flow, num_classes=51, pretrain = True):
-        super(I3D, self).__init__()
-        self.i3d_rgb = InceptionI3d(400, in_channels=3)
-        self.i3d_flow = InceptionI3d(400, in_channels=2)
-        
-        if pretrain == True:
-            self.i3d_rgb.load_state_dict(torch.load(pretrain_rgb))
-            self.i3d_flow.load_state_dict(torch.load(pretrain_flow))
-            
-        self.i3d_rgb.replace_logits(num_classes)
-        self.i3d_flow.replace_logits(num_classes)
-
-    def forward(self, x_rgb, x_flow):
-        logits_rgb = self.i3d_rgb(x_rgb)
-        logits_flow = self.i3d_flow(x_flow)
-        logits = (logits_rgb+logits_flow)/2
-        return logits
